@@ -1,0 +1,3 @@
+from GUIHome import *
+
+startwindowhome()
