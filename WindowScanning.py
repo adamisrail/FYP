@@ -6,6 +6,8 @@ import csv
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from tkinter import *
+import threading
+from datetime import datetime
 
 
 
@@ -26,6 +28,12 @@ def startscanning(inputfilepath, outputfilepath):
     x = 0
     y = 1
     while(True):
+
+        if numberx == 1:
+            setnumber(0)
+            print("Break while")
+            break
+
         try:
 
             dataset = pd.read_csv(path, skiprows=x)
@@ -53,18 +61,37 @@ def startscanning(inputfilepath, outputfilepath):
 
             for i in range(len(dataset)):
 
+                if numberx == 1:
+                    print("break for")
+                    break
+                settotalflows(y)
                 y = y + 1
                 Xrow = dataset.iloc[[i], :].values
+
+
+
 
                 try:
                     Y_predict = loaded_model.predict(Xrow)
                 except:
                     print("we in except, continue")
                     continue
+
                 #for printing out number of rows
-                print(y)
+                #print(y)
                 if Y_predict == 1:
-                    print("ALERTT!!!")
+
+                    now = datetime.now()
+                    dt_string = now.strftime("%H:%M:%S %d/%m/%Y ")
+                    ipaddress = complete_dataset.iloc[[i], 1].values
+                    ipaddressnew = str(ipaddress)[2:-2]
+                    try:
+                        enterrow([ipaddressnew, "Yes", dt_string])
+                    except:
+                        print("GUI closed maybe")
+                        quitwhileloopandwindow()
+
+
 
                 #for passing complete row content to csv writer rather than the dataset where the columns 1,2,3,4 etc have been removed
 
@@ -84,102 +111,115 @@ def startscanning(inputfilepath, outputfilepath):
         # time.sleep(3)
 
 
+def setnumber(number):
+    global numberx
+    numberx = number
+
+numberx = 0
+def setbreakevaluatecode(number):
+    global numberx
+    numberx = number
+
+def quitwhileloopandwindow():
+    try:
+        print("Evaluate ended")
+        setbreakevaluatecode(1)
+        windowscanning.destroy()
+
+    except:
+        print("exceptt to end code")
+
+def enterrow(data):
+    # tv1.insert("", "end", values=data)
+    # windowscanning.update()
+    print("enterrow")
+
+#just delete this and start from GUIstart
+
+def gotocreatewindowscanthread(inputfile, outputfile):
+    createwindowscanthread = threading.Thread(target=lambda: createwindowscan(inputfile, outputfile))
+    createwindowscanthread.start()
 
 
-def createwindowscan(inputfilepath, outputfilepath):
-    print(("create window scan"))
+
+def gotostartscan(inputfile, outputfile):
+    print("gotostartscan")
+    setnumber(0)
+    threadstartstan = threading.Thread(target=lambda: startscanning(inputfile, outputfile))
+    threadstartstan.start()
+    quitscanbtn["state"] = "normal"
+    startscanbtn["state"] = "disabled"
+
+
+
+def enterrow(data):
+    tv1.insert("", "end", values=data)
+    windowscanning.update()
+
+def settotalflows(text):
+    labeltotalflows.config(text=text)
+    windowscanning.update()
+
+
+def createwindowscan(inputfile, outputfile):
+
     #creating the gui envoirnment for widgets
 
+
     global windowscanning
-
-
-
-    # initalise the tkinter GUI
     windowscanning = tk.Tk()
+    windowscanning.protocol("WM_DELETE_WINDOW", quitwhileloopandwindow)
+    windowscanning.geometry('800x800')
     windowscanning.title("Smark Network Monitoring Tool")
-    windowscanning.geometry("500x500")  # set the root dimensions
     windowscanning.pack_propagate(False)  # tells the root to not let the widgets inside it determine its size.
-    windowscanning.resizable(0, 0)  # makes the root window fixed in size.
+    windowscanning.resizable(0, 0)
 
-    # Frame for TreeView
-    frame1 = tk.LabelFrame(windowscanning, text="Excel Data")
-    frame1.place(height=250, width=500)
 
-    # Frame for open file dialog
-    file_frame = tk.LabelFrame(windowscanning, text="Open File")
-    file_frame.place(height=100, width=400, rely=0.65, relx=0)
+    homecanvas = tk.Canvas(windowscanning, width=800, height=800)
+    homecanvas.pack()
+    headinglabel = Label(homecanvas, text="Smart Network Monitoring Tool", fg='#FA9B01', font=('helvetica', 25, 'bold'))
+    homecanvas.create_window(400, 100, window=headinglabel)
 
-    # Buttons
-    button1 = tk.Button(file_frame, text="Browse A File", command=lambda: File_dialog())
-    button1.place(rely=0.65, relx=0.50)
+    global startscanbtn
+    startscanbtn = Button(homecanvas, text="Start Scan", command=lambda: gotostartscan(inputfile, outputfile), bg='#FA9B01', fg='black', font=('helvetica', 12, 'bold'))
+    homecanvas.create_window(300, 700, window=startscanbtn)
+    startscanbtn["state"] = "normal"
 
-    button2 = tk.Button(file_frame, text="Load File", command=lambda: Load_excel_data())
-    button2.place(rely=0.65, relx=0.30)
+    global quitscanbtn
+    quitscanbtn = tk.Button(text='Quit Scan', command=lambda: quitwhileloopandwindow(), bg='red', fg='black', font=('helvetica', 12, 'bold'))
+    quitscanbtn["state"] = "disabled"
+    homecanvas.create_window(500, 700, window=quitscanbtn)
 
-    # The file/file path text
-    label_file = ttk.Label(file_frame, text="No File Selected")
-    label_file.place(rely=0, relx=0)
 
-    ## Treeview Widget
-    tv1 = ttk.Treeview(frame1)
+    global labeltotalflows
+    labeltotalflows = Label(homecanvas, text="0", font=('helvetica', 10, 'bold'))
+    homecanvas.create_window(20, 570, window=labeltotalflows)
+
+    treeviewframe = LabelFrame(windowscanning, text="Excel Data")
+    treeviewframe.place(height=400, width=800, rely=0.2, relx=0)
+
+    global tv1
+    tv1 = ttk.Treeview(treeviewframe)
     tv1.place(relheight=1, relwidth=1)  # set the height and width of the widget to 100% of its container (frame1).
 
-    treescrolly = tk.Scrollbar(frame1, orient="vertical",
+    treescrolly = tk.Scrollbar(treeviewframe, orient="vertical",
                                command=tv1.yview)  # command means update the yaxis view of the widget
-    treescrollx = tk.Scrollbar(frame1, orient="horizontal",
+    treescrollx = tk.Scrollbar(treeviewframe, orient="horizontal",
                                command=tv1.xview)  # command means update the xaxis view of the widget
     tv1.configure(xscrollcommand=treescrollx.set,
                   yscrollcommand=treescrolly.set)  # assign the scrollbars to the Treeview Widget
     treescrollx.pack(side="bottom", fill="x")  # make the scrollbar fill the x axis of the Treeview widget
     treescrolly.pack(side="right", fill="y")  # make the scrollbar fill the y axis of the Treeview widget
 
-    def File_dialog():
-        """This Function will open the file explorer and assign the chosen file path to label_file"""
-        filename = filedialog.askopenfilename(initialdir="/",
-                                              title="Select A File",
-                                              filetype=(("xlsx files", "*.xlsx"), ("All Files", "*.*")))
-        label_file["text"] = filename
-        return None
+    listofcolumns = ["IP Address", "Anomaly Detected", "Time of Detection"]
 
-    def Load_excel_data():
-        """If the file selected is valid this will load the file into the Treeview"""
-        file_path = label_file["text"]
-        try:
-            excel_filename = r"{}".format(file_path)
-            if excel_filename[-4:] == ".csv":
-                df = pd.read_csv(excel_filename)
-            else:
-                df = pd.read_excel(excel_filename)
-
-        except ValueError:
-            tk.messagebox.showerror("Information", "The file you have chosen is invalid")
-            return None
-        except FileNotFoundError:
-            tk.messagebox.showerror("Information", f"No such file as {file_path}")
-            return None
-
-        clear_data()
-        tv1["column"] = list(df.columns)
-        tv1["show"] = "headings"
-        for column in tv1["columns"]:
-            tv1.heading(column, text=column)  # let the column heading = column name
-
-        df_rows = df.to_numpy().tolist()  # turns the dataframe into a list of lists
-        for row in df_rows:
-            tv1.insert("", "end",
-                       values=row)  # inserts each list into the treeview. For parameters see https://docs.python.org/3/library/tkinter.ttk.html#tkinter.ttk.Treeview.insert
-        return None
-
-    def clear_data():
-        tv1.delete(*tv1.get_children())
-        return None
-
+    tv1["column"] = listofcolumns
+    tv1["show"] = "headings"
+    tv1.heading("IP Address", text="IP Address")
+    tv1.heading("Anomaly Detected", text="Anomaly Detected")
+    tv1.heading("Time of Detection", text="Time of Detection")
     windowscanning.mainloop()
 
-
-
-#just delete this and start from GUIstart
-createwindowscan("abc", "abc")
 
 
 

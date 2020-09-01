@@ -68,7 +68,8 @@ def gotoscan():
         print("starting analysis from working code")
         homewindow.destroy()
         folderpath = os.path.dirname(file_path)
-        createwindowscan(file_path, folderpath)
+        #createwindowscan(file_path, folderpath)
+        gotocreatewindowscanthread("abc", "abc")
 
 
 def startwindowhome():
@@ -111,13 +112,13 @@ def startwindowhome():
     homecanvas.create_window(200, 650, window=browseButton_Excel)
 
     global evaluatebtn
-    evaluatebtn = tk.Button(text='Evaluate', command=gotoevaluate, bg='red', fg='black',
+    evaluatebtn = tk.Button(text='Evaluate', command=lambda: gotoevaluate(), bg='red', fg='black',
                             font=('helvetica', 12, 'bold'))
     evaluatebtn["state"] = "disabled"
     homecanvas.create_window(600, 650, window=evaluatebtn)
 
     global scanbtn
-    scanbtn = tk.Button(text='Start Scan', command=gotoscan, bg='red', fg='black',
+    scanbtn = tk.Button(text='Start Scan', command=lambda: gotoscan(), bg='red', fg='black',
                             font=('helvetica', 12, 'bold'))
 
     scanbtn["state"] = "disabled"
