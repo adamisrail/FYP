@@ -4,17 +4,18 @@ import time
 import pickle
 import csv
 import tkinter as tk
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 from tkinter import *
 
 
 
 
 
-def startscanning():
+def startscanning(inputfilepath, outputfilepath):
     # load the model from disk
 
-
+    path = inputfilepath
+    offlinefilepath = outputfilepath
 
     loaded_model = pickle.load(open(r'D:\Dropbox\Dropbox\P1 Research\Pyhton Codes\Test data and models\LogisticRegression_Model1.sav', 'rb'))
     #data recieved from cicflowmeter is this file
@@ -51,16 +52,17 @@ def startscanning():
 
 
             for i in range(len(dataset)):
-                Xrow = dataset.iloc[[i], :].values
-                Y_predict = loaded_model.predict(Xrow)
 
+                y = y + 1
+                Xrow = dataset.iloc[[i], :].values
+
+                try:
+                    Y_predict = loaded_model.predict(Xrow)
+                except:
+                    print("we in except, continue")
+                    continue
                 #for printing out number of rows
                 print(y)
-                y = y + 1
-                settp(y)
-                settn(y+1)
-                setfp(y+2)
-                setfn(y+3)
                 if Y_predict == 1:
                     print("ALERTT!!!")
 
@@ -83,110 +85,101 @@ def startscanning():
 
 
 
-def settp(text):
-    tptextlabel.config(text=text)
-    windowtwo.update()
-    # FPlabel['text'] = "1234"
 
-
-def gettp():
-    return 0
-
-def settn(text):
-    tntextlabel.config(text=text)
-    windowtwo.update()
-    #FPlabel['text'] = "1234"
-
-def gettn():
-    return 0
-
-
-def setfp(text):
-    fptextlabel.config(text=text)
-    windowtwo.update()
-    # FPlabel['text'] = "1234"
-
-
-def getfp():
-    return 0
-
-def setfn(text):
-    fntextlabel.config(text=text)
-    windowtwo.update()
-    # FPlabel['text'] = "1234"
-
-
-def getfn():
-    return 0
-
-
-
-def onbuttonclickstartscan():
-    startscanning()
-
-
-def createwindowtwo():
-
+def createwindowscan(inputfilepath, outputfilepath):
+    print(("create window scan"))
     #creating the gui envoirnment for widgets
 
-    global windowtwo
-    windowtwo = tk.Tk()
-    # windowtwo.geometry('800x800+200+0')
-    windowtwo.title("Smark Network Monitoring Tool")
-
-    homecanvas = tk.Canvas(windowtwo, width=800, height=800, bg='white')
-    homecanvas.pack()
-    headinglabel = Label(homecanvas, text="Smart Network Monitoring Tool", bg='white', fg='#FA9B01', font=('helvetica', 25, 'bold'))
-    homecanvas.create_window(400, 100, window=headinglabel)
+    global windowscanning
 
 
 
-    #creating the top part to get the attacker ip
+    # initalise the tkinter GUI
+    windowscanning = tk.Tk()
+    windowscanning.title("Smark Network Monitoring Tool")
+    windowscanning.geometry("500x500")  # set the root dimensions
+    windowscanning.pack_propagate(False)  # tells the root to not let the widgets inside it determine its size.
+    windowscanning.resizable(0, 0)  # makes the root window fixed in size.
 
-    attackersiplabel = Label(homecanvas, text="Enter the Attackers IP for evaluation", bg='white', fg='black', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(400, 200, window=attackersiplabel)
+    # Frame for TreeView
+    frame1 = tk.LabelFrame(windowscanning, text="Excel Data")
+    frame1.place(height=250, width=500)
 
-    inputboxip = tk.Entry(windowtwo)
-    homecanvas.create_window(300, 250, window=inputboxip)
+    # Frame for open file dialog
+    file_frame = tk.LabelFrame(windowscanning, text="Open File")
+    file_frame.place(height=100, width=400, rely=0.65, relx=0)
 
-    startscanafteriprecievedbtn = tk.Button(text='Start Scanning', command=onbuttonclickstartscan, bg='#FA9B01', fg='black', font=('helvetica', 12, 'bold'))
-    homecanvas.create_window(500, 250, window=startscanafteriprecievedbtn)
+    # Buttons
+    button1 = tk.Button(file_frame, text="Browse A File", command=lambda: File_dialog())
+    button1.place(rely=0.65, relx=0.50)
+
+    button2 = tk.Button(file_frame, text="Load File", command=lambda: Load_excel_data())
+    button2.place(rely=0.65, relx=0.30)
+
+    # The file/file path text
+    label_file = ttk.Label(file_frame, text="No File Selected")
+    label_file.place(rely=0, relx=0)
+
+    ## Treeview Widget
+    tv1 = ttk.Treeview(frame1)
+    tv1.place(relheight=1, relwidth=1)  # set the height and width of the widget to 100% of its container (frame1).
+
+    treescrolly = tk.Scrollbar(frame1, orient="vertical",
+                               command=tv1.yview)  # command means update the yaxis view of the widget
+    treescrollx = tk.Scrollbar(frame1, orient="horizontal",
+                               command=tv1.xview)  # command means update the xaxis view of the widget
+    tv1.configure(xscrollcommand=treescrollx.set,
+                  yscrollcommand=treescrolly.set)  # assign the scrollbars to the Treeview Widget
+    treescrollx.pack(side="bottom", fill="x")  # make the scrollbar fill the x axis of the Treeview widget
+    treescrolly.pack(side="right", fill="y")  # make the scrollbar fill the y axis of the Treeview widget
+
+    def File_dialog():
+        """This Function will open the file explorer and assign the chosen file path to label_file"""
+        filename = filedialog.askopenfilename(initialdir="/",
+                                              title="Select A File",
+                                              filetype=(("xlsx files", "*.xlsx"), ("All Files", "*.*")))
+        label_file["text"] = filename
+        return None
+
+    def Load_excel_data():
+        """If the file selected is valid this will load the file into the Treeview"""
+        file_path = label_file["text"]
+        try:
+            excel_filename = r"{}".format(file_path)
+            if excel_filename[-4:] == ".csv":
+                df = pd.read_csv(excel_filename)
+            else:
+                df = pd.read_excel(excel_filename)
+
+        except ValueError:
+            tk.messagebox.showerror("Information", "The file you have chosen is invalid")
+            return None
+        except FileNotFoundError:
+            tk.messagebox.showerror("Information", f"No such file as {file_path}")
+            return None
+
+        clear_data()
+        tv1["column"] = list(df.columns)
+        tv1["show"] = "headings"
+        for column in tv1["columns"]:
+            tv1.heading(column, text=column)  # let the column heading = column name
+
+        df_rows = df.to_numpy().tolist()  # turns the dataframe into a list of lists
+        for row in df_rows:
+            tv1.insert("", "end",
+                       values=row)  # inserts each list into the treeview. For parameters see https://docs.python.org/3/library/tkinter.ttk.html#tkinter.ttk.Treeview.insert
+        return None
+
+    def clear_data():
+        tv1.delete(*tv1.get_children())
+        return None
+
+    windowscanning.mainloop()
 
 
 
-    #now adding widgets for evaluation display
-
-    tpheadinglabel = Label(homecanvas, text="True Positives", bg='white', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(150, 350, window=tpheadinglabel)
-    global tptextlabel
-    tptextlabel = Label(homecanvas, text=gettp(), bg='white', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(150, 400, window=tptextlabel)
+#just delete this and start from GUIstart
+createwindowscan("abc", "abc")
 
 
-    tnheadinglabel = Label(homecanvas, text="Ture Negatives", bg='white', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(316, 350, window=tnheadinglabel)
-    global tntextlabel
-    tntextlabel = Label(homecanvas, text=gettn(), bg='white', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(316, 400, window=tntextlabel)
-
-
-    fpheadinglabel = Label(homecanvas, text="False Positives", bg='white', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(483, 350, window=fpheadinglabel)
-    global fptextlabel
-    fptextlabel = Label(homecanvas, text=getfp(), bg='white', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(483, 400, window=fptextlabel)
-
-
-    fnheadinglabel = Label(homecanvas, text="False Negatives", bg='white', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(650, 350, window=fnheadinglabel)
-    global fntextlabel
-    fntextlabel = Label(homecanvas, text=getfn(), bg='white', font=('helvetica', 15, 'bold'))
-    homecanvas.create_window(650, 400, window=fntextlabel)
-
-
-
-    windowtwo.mainloop()
-
-
-createwindowtwo()
 

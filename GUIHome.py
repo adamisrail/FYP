@@ -1,5 +1,5 @@
 from WindowEvaluation import *
-
+from WindowScanning import *
 
 from tkinter import *
 
@@ -68,13 +68,17 @@ def gotoscan():
         print("starting analysis from working code")
         homewindow.destroy()
         folderpath = os.path.dirname(file_path)
-        #createwindowtwo(file_path, "filhal not mentioned")
+        createwindowscan(file_path, folderpath)
 
 
 def startwindowhome():
     global homewindow
     homewindow = tk.Tk()
-    # homewindow.geometry('800x800+200+0')
+    #dont resize to size of widget upon its addition/pack
+    homewindow.pack_propagate(False)
+    #dont be resizable
+    homewindow.resizable(0, 0)
+    homewindow.geometry('800x800+200+0')
     homewindow.title("Smark Network Monitoring Tool")
 
     wallpaperimg = PhotoImage(file=wallpaper)
