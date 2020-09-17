@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-import time
+
 import pickle
 import csv
 import tkinter as tk
@@ -8,8 +8,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter import *
 import threading
 from datetime import datetime
-
-
+from multiprocessing import freeze_support
 
 
 
@@ -21,12 +20,12 @@ def startscanning(inputfilepath, outputfilepath):
 
     loaded_model = pickle.load(open(r'D:\Dropbox\Dropbox\P1 Research\Pyhton Codes\Test data and models\LogisticRegression_Model1.sav', 'rb'))
     #data recieved from cicflowmeter is this file
-    path = r"D:\Dropbox\Dropbox\P1 Research\Pyhton Codes\Test data and models\2020-03-15_Flow.csv"
-
+    # path = r"D:\Dropbox\Dropbox\P1 Research\Pyhton Codes\Test data and models\2020-03-15_Flow.csv"
     offlinefilepath = r'D:\Dropbox\Dropbox\P1 Research\Pyhton Codes\Test data and models\outputfile.csv'
 
     x = 0
     y = 1
+    countpos = 0
     while(True):
 
         if numberx == 1:
@@ -47,6 +46,8 @@ def startscanning(inputfilepath, outputfilepath):
 
             print("File not found or bieng accessed or some error "
                   "with original file created by cicflowmeter")
+
+            quitwhileloopandwindow()
             exit()
 
         #we have the data for analysis, now we have to analyse
@@ -55,8 +56,14 @@ def startscanning(inputfilepath, outputfilepath):
         #if loop if the dataset is not empty
         if len(dataset) != 0:
 
-            dataset.drop(dataset.iloc[:, [0, 1, 2, 3, 5, 6, 83]], axis=1, inplace=True)
-            complete_dataset.drop(complete_dataset.iloc[:, [83]], axis=1, inplace=True)
+            try:
+                dataset.drop(dataset.iloc[:, [0, 1, 2, 3, 5, 6, 83]], axis=1, inplace=True)
+                complete_dataset.drop(complete_dataset.iloc[:, [83]], axis=1, inplace=True)
+            except:
+                print("except of removing columns from data frame")
+                print("exitting code, please enter the correct input file")
+                quitwhileloopandwindow()
+
 
 
             for i in range(len(dataset)):
@@ -86,6 +93,8 @@ def startscanning(inputfilepath, outputfilepath):
                     ipaddress = complete_dataset.iloc[[i], 1].values
                     ipaddressnew = str(ipaddress)[2:-2]
                     try:
+                        countpos += 1
+                        setposflows(countpos)
                         enterrow([ipaddressnew, "Yes", dt_string])
                     except:
                         print("GUI closed maybe")
@@ -100,15 +109,22 @@ def startscanning(inputfilepath, outputfilepath):
 
                 complete_Xrow_with_Y = np.append(Flattened_X, Y_predict)
 
+
                 #Writing a CSV file for offline Analysis
-                with open(offlinefilepath, 'a', newline='') as offlinefile:
-                    writer = csv.writer(offlinefile)
-                    writer.writerow(complete_Xrow_with_Y)
+                try:
+                    with open(offlinefilepath, 'a', newline='') as offlinefile:
+                        writer = csv.writer(offlinefile)
+                        writer.writerow(complete_Xrow_with_Y)
+                        offlinefile.close()
+                except:
+                    print("except of writing excel file, maybe invalid directory of output file")
 
 
         # else:
         # print("dataset empty, sleeping for 3 seconds")
         # time.sleep(3)
+
+
 
 
 def setnumber(number):
@@ -129,27 +145,34 @@ def quitwhileloopandwindow():
     except:
         print("exceptt to end code")
 
-def enterrow(data):
-    # tv1.insert("", "end", values=data)
-    # windowscanning.update()
-    print("enterrow")
-
-#just delete this and start from GUIstart
 
 def gotocreatewindowscanthread(inputfile, outputfile):
+    global  createwindowscanthread
     createwindowscanthread = threading.Thread(target=lambda: createwindowscan(inputfile, outputfile))
     createwindowscanthread.start()
+
+    # global createwindowscanprocess
+    # createwindowscanprocess = multiprocessing.Process(target=createwindowscan, args=(inputfile, outputfile,))
+    # createwindowscanprocess.start()
+    #
+    # createwindowscan(inputfile, outputfile)
+
 
 
 
 def gotostartscan(inputfile, outputfile):
     print("gotostartscan")
     setnumber(0)
+    global threadstartstan
     threadstartstan = threading.Thread(target=lambda: startscanning(inputfile, outputfile))
     threadstartstan.start()
+
     quitscanbtn["state"] = "normal"
     startscanbtn["state"] = "disabled"
 
+    # global processstartstan
+    # processstartstan = multiprocessing.Process(target=startscanning, args=(inputfile, outputfile,))
+    # processstartstan.start()
 
 
 def enterrow(data):
@@ -158,6 +181,10 @@ def enterrow(data):
 
 def settotalflows(text):
     labeltotalflows.config(text=text)
+    windowscanning.update()
+
+def setposflows(text):
+    labelposflows.config(text=text)
     windowscanning.update()
 
 
@@ -177,16 +204,16 @@ def createwindowscan(inputfile, outputfile):
 
     homecanvas = tk.Canvas(windowscanning, width=800, height=800)
     homecanvas.pack()
-    headinglabel = Label(homecanvas, text="Smart Network Monitoring Tool", fg='#FA9B01', font=('helvetica', 25, 'bold'))
+    headinglabel = Label(homecanvas, text="Smart Network Monitoring Tool", fg='#0b0230', font=('helvetica', 25, 'bold'))
     homecanvas.create_window(400, 100, window=headinglabel)
 
     global startscanbtn
-    startscanbtn = Button(homecanvas, text="Start Scan", command=lambda: gotostartscan(inputfile, outputfile), bg='#FA9B01', fg='black', font=('helvetica', 12, 'bold'))
+    startscanbtn = Button(homecanvas, text="Start Scan", command=lambda: gotostartscan(inputfile, outputfile), bg='light blue', fg='black', font=('helvetica', 12))
     homecanvas.create_window(300, 700, window=startscanbtn)
     startscanbtn["state"] = "normal"
 
     global quitscanbtn
-    quitscanbtn = tk.Button(text='Quit Scan', command=lambda: quitwhileloopandwindow(), bg='red', fg='black', font=('helvetica', 12, 'bold'))
+    quitscanbtn = tk.Button(text='Quit Scan', command=lambda: quitwhileloopandwindow(), bg='red', fg='black', font=('helvetica', 12))
     quitscanbtn["state"] = "disabled"
     homecanvas.create_window(500, 700, window=quitscanbtn)
 
@@ -194,6 +221,10 @@ def createwindowscan(inputfile, outputfile):
     global labeltotalflows
     labeltotalflows = Label(homecanvas, text="0", font=('helvetica', 10, 'bold'))
     homecanvas.create_window(20, 570, window=labeltotalflows)
+
+    global labelposflows
+    labelposflows = Label(homecanvas, text="0", font=('helvetica', 10, 'bold'))
+    homecanvas.create_window(20, 590, window=labelposflows)
 
     treeviewframe = LabelFrame(windowscanning, text="Excel Data")
     treeviewframe.place(height=400, width=800, rely=0.2, relx=0)
@@ -220,6 +251,21 @@ def createwindowscan(inputfile, outputfile):
     tv1.heading("Time of Detection", text="Time of Detection")
     windowscanning.mainloop()
 
+def errormessage():
+    errorwindow = tk.Tk()
+    errorwindow.title("Error window!")
+
+    canvaserror = tk.Canvas(errorwindow, width=200, height=200)
+    errorlabel = Label(canvaserror, text="Error Encountered", fg='red', font=('helvetica', 15, 'bold'))
+    errorlabel.pack()
+    canvaserror.create_window(100, 100, window=errorlabel)
+    canvaserror.pack()
+
+    errorwindow.mainloop()
 
 
+
+if __name__ == '__main__':
+    # freeze_support() here if program needs to be frozen
+    freeze_support()
 

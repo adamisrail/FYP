@@ -1,13 +1,14 @@
 
 import pandas as pd
 import numpy as np
-import time
+
 import pickle
 import csv
 import tkinter as tk
-from tkinter import filedialog, messagebox
+
 from tkinter import *
-import os
+
+import threading
 
 
 
@@ -21,12 +22,12 @@ def startevaluating(attackerIP, inputfile, outputfile):
     path = inputfile
     #the output path file has been set to be the folder from where the input file has been received
     offlinefilepath = outputfile
-    attackerIP = "192.168.18.82"
+    #attackerIP = "192.168.18.82"
 
     loaded_model = pickle.load(open(r'D:\Dropbox\Dropbox\P1 Research\Pyhton Codes\Test data and models\LogisticRegression_Model1.sav', 'rb'))
     #data recieved from cicflowmeter is this file
     #path = r"D:\Dropbox\Dropbox\P1 Research\Pyhton Codes\Test data and models\2020-03-15_Flow.csv"
-    path = r"F:\Adam\CICflowmeter Current\CICFlowMeter-master\data\daily\2020-08-31_Flow.csv"
+    #path = r"F:\Adam\CICflowmeter Current\CICFlowMeter-master\data\daily\2020-08-31_Flow.csv"
 
     offlinefilepath = r'D:\Dropbox\Dropbox\P1 Research\Pyhton Codes\Test data and models\outputfile.csv'
 
@@ -99,6 +100,7 @@ def startevaluating(attackerIP, inputfile, outputfile):
 
                     # count for ddos flow
                     totalp = totalp + 1
+                    print(totalp)
                     #if dataset.iloc[:, 83].values[i] == 1:
                     if Y_predict == 1:
                         # count for flows that are ddos and predicted 1 (right)
@@ -278,6 +280,15 @@ def quitandopenhomewindow():
     setbreakevaluatecode(1)
 
 
+def createwindowevaluationthread(inputfile, outputfile):
+
+    threadwindowevaluation = threading.Thread(target=lambda: createwindowevaluation(inputfile, outputfile))
+    threadwindowevaluation.start()
+
+def gotostartevaluatingthread(attackerIP, inputfile, outputfile):
+    setnumber(0)
+    threadstartevaluate = threading.Thread(target=lambda: startevaluating(attackerIP, inputfile, outputfile))
+    threadstartevaluate.start()
 
 
 
@@ -293,7 +304,7 @@ def createwindowevaluation(inputfile, outputfile):
 
     homecanvas = tk.Canvas(windowevaluate, width=800, height=800, bg='white')
     homecanvas.pack()
-    headinglabel = Label(homecanvas, text="Smart Network Monitoring Tool", bg='white', fg='#FA9B01', font=('helvetica', 25, 'bold'))
+    headinglabel = Label(homecanvas, text="Smart Network Monitoring Tool", bg='white', fg='#0b0230', font=('helvetica', 25, 'bold'))
     homecanvas.create_window(400, 100, window=headinglabel)
 
 
@@ -307,7 +318,7 @@ def createwindowevaluation(inputfile, outputfile):
     homecanvas.create_window(300, 250, window=inputboxip)
 
     global  startscanafteriprecievedbtn
-    startscanafteriprecievedbtn = tk.Button(text='Start Scanning', command= lambda: startevaluating(inputboxip.get(), inputfile, outputfile), bg='#FA9B01', fg='black', font=('helvetica', 12, 'bold'))
+    startscanafteriprecievedbtn = tk.Button(text='Start Scanning', command=lambda: gotostartevaluatingthread(inputboxip.get(), inputfile, outputfile), bg='light blue', fg='black', font=('helvetica', 12, 'bold'))
     homecanvas.create_window(500, 250, window=startscanafteriprecievedbtn)
 
 
@@ -409,7 +420,7 @@ def createwindowevaluation(inputfile, outputfile):
     global quitevaluatebtn
     quitevaluatebtn = tk.Button(text='Quit Evaluate',
                                             command= quitandopenhomewindow,
-                                            bg='#FA9B01', fg='black', font=('helvetica', 12, 'bold'))
+                                            bg='red', fg='black', font=('helvetica', 12, 'bold'))
     homecanvas.create_window(400, 700, window=quitevaluatebtn)
 
     quitevaluatebtn["state"] = "disabled"
