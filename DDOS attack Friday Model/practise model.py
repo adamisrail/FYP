@@ -55,7 +55,7 @@ print(result)
 
 
 from sklearn.metrics import confusion_matrix
-cm=confusion_matrix(Y_predict,Y_test)
+cm = confusion_matrix(Y_predict, Y_test)
 print(cm)
 
 #XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXxx
